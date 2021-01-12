@@ -1,4 +1,4 @@
-package io.hevo;
+package com.hevodata;
 
 import static org.junit.Assert.assertTrue;
 
