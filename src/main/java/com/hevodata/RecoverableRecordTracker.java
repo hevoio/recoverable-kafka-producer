@@ -1,6 +1,5 @@
 package com.hevodata;
 
-import com.hevodata.commons.Action;
 import com.hevodata.commons.ThrowingConsumer;
 import com.hevodata.exceptions.RecoveryException;
 
@@ -15,8 +14,6 @@ public interface RecoverableRecordTracker extends AutoCloseable {
     void recordFlushed(long marker);
 
     void addMarkerFlushConsumer(ThrowingConsumer<Long> markerFlushConsumer);
-
-    void enableMarkerCleanup(long markerTTL, Action markerCleanupAction);
 
     long flushedTill() throws RecoveryException;
 

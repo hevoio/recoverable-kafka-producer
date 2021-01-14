@@ -1,10 +1,8 @@
 package com.hevodata.bigqueue.serde;
 
-import io.hevo.core.bigqueue.BigQueueSerDe;
 
-import javax.inject.Singleton;
+import com.hevodata.bigqueue.BigQueueSerDe;
 
-@Singleton
 public class ByteArraySerde implements BigQueueSerDe<byte[]> {
     @Override
     public byte[] serialize(byte[] bytes) {

@@ -2,7 +2,7 @@ package com.hevodata.exceptions;
 
 public class ProcessInterruptedException extends RecoveryException {
 
-    public ProcessInterruptedException(Throwable cause) {
-        super(cause);
+    public ProcessInterruptedException(String message) {
+        super(message);
     }
 }

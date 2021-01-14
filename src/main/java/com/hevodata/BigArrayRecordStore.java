@@ -1,9 +1,9 @@
 package com.hevodata;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hevodata.commons.ThrowingBiConsumer;
+import com.hevodata.exceptions.ProcessInterruptedException;
 import com.hevodata.exceptions.RecoveryDisabledException;
 import com.hevodata.exceptions.RecoveryException;
 import com.leansoft.bigqueue.BigArrayImpl;
@@ -61,7 +61,7 @@ public class BigArrayRecordStore implements RecoverableRecordStore {
     }
 
     @Override
-    public long publishRecord(byte[] record) throws RecoveryDisabledException {
+    public long publishRecord(byte[] record) throws RecoveryException {
         if (recoveryDisabled) {
             throw new RecoveryDisabledException();
         }
@@ -70,7 +70,7 @@ public class BigArrayRecordStore implements RecoverableRecordStore {
         } catch (IOException e) {
             if (e instanceof ClosedByInterruptException) {
                 log.warn("Publish record to big array interrupted", e);
-                throw new HevoProcessInterruptedException("Publish record to big array interrupted");
+                throw new ProcessInterruptedException("Publish record to big array interrupted");
             } else {
                 log.error("Publish record to big array failed", e);
                 throw new RecoveryException(e.getMessage());
@@ -80,17 +80,17 @@ public class BigArrayRecordStore implements RecoverableRecordStore {
     }
 
     @Override
-    public byte[] getRecord(long marker) throws HevoException {
+    public byte[] getRecord(long marker) throws RecoveryException {
         try {
             return this.bigArray.get(marker);
         } catch (IOException e) {
             log.error("Retrieving record from big array failed for marker {}", marker, e);
-            throw new HevoException(e.getMessage());
+            throw new RecoveryException(e.getMessage());
         }
     }
 
     @Override
-    public long consumeRecoverableRecords(ThrowingBiConsumer<Long, byte[]> recoveryRecordConsumer) throws HevoException {
+    public long consumeRecoverableRecords(ThrowingBiConsumer<Long, byte[]> recoveryRecordConsumer) throws RecoveryException {
 
         long totalRecords = 0;
         try {
@@ -109,19 +109,19 @@ public class BigArrayRecordStore implements RecoverableRecordStore {
             }
         } catch (Exception e) {
             log.error("Recovery records consumption failed", e);
-            throw new HevoException(e.getMessage());
+            throw new RecoveryException(e.getMessage());
         }
         this.recoveryRun = true;
         return totalRecords;
     }
 
     @Override
-    public void markInitialized() throws HevoException {
+    public void markInitialized() throws RecoveryException {
         try {
             Files.deleteIfExists(basePath.resolve(SHUTDOWN_MARKER));
         } catch (IOException e) {
             log.error("Shutdown marker deletion failed", e);
-            throw new HevoException(e.getMessage());
+            throw new RecoveryException(e.getMessage());
         }
     }
 
@@ -137,24 +137,13 @@ public class BigArrayRecordStore implements RecoverableRecordStore {
     }
 
     private void monitorDiskSpace() {
-        if (recoveryDisabled) {
-            return;
-        }
         long totalDirSize = FileUtils.sizeOfDirectory(new File(basePath.toString())) / (1024 * 1024 * 1024);
         recoveryDisabled = totalDirSize > diskSpaceThreshold;
-        if (recoveryDisabled) {
-            NotificationsClient.sendNotification(NotificationType.INTERNAL_NOTIFICATION,
-                    ImmutableMap.<String, Object>builder()
-                            .put(Constants.FIELD_SEVERITY, "ERROR")
-                            .put(Constants.FIELD_TITLE, "Recovery Manager Disabled")
-                            .put(Constants.FIELD_BODY, String.format("Disk threshold %d GB breached", diskSpaceThreshold))
-                            .build());
-            log.error("Recovery manager disk threshold {} breached", diskSpaceThreshold);
-        }
+
     }
 
     @Override
-    public void close() throws HevoException {
+    public void close() throws RecoveryException {
         try {
             if (recoveryRun) {
                 Files.createFile(basePath.resolve(SHUTDOWN_MARKER));
@@ -163,7 +152,7 @@ public class BigArrayRecordStore implements RecoverableRecordStore {
             this.diskSpaceMonitor.shutdownNow();
         } catch (Exception e) {
             log.error("Recovery manager shutdown failed", e);
-            throw new HevoException(e.getMessage());
+            throw new RecoveryException(e.getMessage());
         }
     }
 
@@ -171,5 +160,4 @@ public class BigArrayRecordStore implements RecoverableRecordStore {
     public IBigArray getBigArray(String arrayDir, String arrayName, int pageSize) throws IOException {
         return new BigArrayImpl(arrayDir, arrayName, pageSize);
     }
-
 }

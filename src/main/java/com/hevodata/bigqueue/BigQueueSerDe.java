@@ -1,11 +1,11 @@
 package com.hevodata.bigqueue;
 
-import io.hevo.core.exceptions.HevoException;
+import com.hevodata.exceptions.RecoveryException;
 
 public interface BigQueueSerDe<T> {
 
-    byte[] serialize(T t) throws HevoException;
+    byte[] serialize(T t) throws RecoveryException;
 
-    T deserialize(byte[] bytes) throws HevoException;
+    T deserialize(byte[] bytes) throws RecoveryException;
 
 }

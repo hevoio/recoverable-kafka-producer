@@ -14,4 +14,7 @@ public class ProducerRecoveryConfig {
     private int maxParallelism = 1000;
     //in GBs
     private int diskSpaceThreshold = 20;
+
+    //this serde will be used to serialize/deserialize producer callbacks if present
+    private CallbackSerde callbackSerde;
 }

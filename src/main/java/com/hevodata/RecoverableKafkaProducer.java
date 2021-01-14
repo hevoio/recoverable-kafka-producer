@@ -1,16 +1,19 @@
 package com.hevodata;
 
-import com.google.common.collect.Lists;
 import com.hevodata.bigqueue.BigQueuePool;
+import com.hevodata.bigqueue.BigQueuePoolConfiguration;
+import com.hevodata.bigqueue.serde.ByteArraySerde;
 import com.hevodata.commons.TimeUtils;
 import com.hevodata.commons.Wrapper;
+import com.hevodata.exceptions.RecoveryDisabledException;
 import com.hevodata.exceptions.RecoveryException;
+import com.hevodata.exceptions.RecoveryRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 @Slf4j
@@ -19,103 +22,84 @@ public class RecoverableKafkaProducer {
     private KafkaProducer<byte[], byte[]> embeddedProducer;
     private RecoverableRecordStore recoverableRecordStore;
     private RecoverableRecordTracker recoverableRecordTracker;
-    private RecoverableProducerRecordSerde recoverableProducerRecordSerde;
+    private final RecoverableProducerRecordSerde recoverableProducerRecordSerde;
     private BigQueuePool<byte[]> bigQueuePool;
     private final Wrapper<Long> lastFailedMarker = Wrapper.of(-1L);
     private ProducerRecoveryConfig producerRecoveryConfig;
+    private String id;
 
     public RecoverableKafkaProducer(KafkaProducer<byte[], byte[]> embeddedProducer, ProducerRecoveryConfig producerRecoveryConfig) throws RecoveryException {
-        RecoverableRecordTracker recoverableRecordTracker = new InMemoryMarkersTracker(producerRecoveryConfig.getBaseDir().resolve("tracker"));
+        RecoverableRecordTracker recoverableRecordTracker = new InMemoryRecordTracker(producerRecoveryConfig.getBaseDir().resolve("tracker"));
         RecoverableRecordStore recoverableRecordStore = new BigArrayRecordStore(producerRecoveryConfig.getBaseDir().resolve("data"), recoverableRecordTracker,
                 producerRecoveryConfig.getMaxParallelism(), producerRecoveryConfig.getDiskSpaceThreshold());
-        this(embeddedProducer, producerRecoveryConfig, recoverableRecordStore, recoverableRecordTracker)
-
-
+        this.recoverableProducerRecordSerde = new RecoverableProducerRecordSerde(producerRecoveryConfig.getCallbackSerde());
+        doInitializeProducer(embeddedProducer, producerRecoveryConfig, recoverableRecordStore, recoverableRecordTracker);
     }
 
     public RecoverableKafkaProducer(KafkaProducer<byte[], byte[]> embeddedProducer, ProducerRecoveryConfig producerRecoveryConfig,
-                                    RecoverableRecordStore recoverableRecordStore, RecoverableRecordTracker recoverableRecordTracker) throws RecoveryException {
+                                    RecoverableRecordStore recoverableRecordStore, RecoverableRecordTracker recoverableRecordTracker) {
+        this.recoverableProducerRecordSerde = new RecoverableProducerRecordSerde(producerRecoveryConfig.getCallbackSerde());
+        doInitializeProducer(embeddedProducer, producerRecoveryConfig, recoverableRecordStore, recoverableRecordTracker);
 
+    }
+
+    private void doInitializeProducer(KafkaProducer<byte[], byte[]> embeddedProducer, ProducerRecoveryConfig producerRecoveryConfig,
+                                      RecoverableRecordStore recoverableRecordStore, RecoverableRecordTracker recoverableRecordTracker) {
         this.embeddedProducer = embeddedProducer;
         this.recoverableRecordTracker = recoverableRecordTracker;
         this.recoverableRecordStore = recoverableRecordStore;
+        this.producerRecoveryConfig = producerRecoveryConfig;
+        this.id = UUID.randomUUID().toString();
         initializeFailedRecordsQueue();
 
-        this.recoverableRecordTracker.enableMarkerCleanup(TimeUtils.fromMinutesToMillis(10), () -> {
-            this.embeddedProducer.flush();
-        });
-
-        Shutdown.registerHook(new Hook(Hook.HookType.PRODUCER, "Recoverable-kafka-producer:" + producerId()) {
-            @Override
-            protected void onShutdown() {
-                close();
-            }
-        });
     }
 
     private void initializeFailedRecordsQueue() {
-        String poolName = "producer-recovery-" + producerId();
-        ByteArraySerde byteArraySerde = Registry.getType(ByteArraySerde.class);
+        String poolName = "recoverable-producer-" + id;
         this.bigQueuePool = new BigQueuePool<>(BigQueuePoolConfiguration.<byte[]>builder()
-                .name(poolName).noOfQueues(1).baseDir(Paths.get(FileUtils.DATA_DIRECTORY, poolName))
-                .bigQueueConsumerType(KafkaFailedRecordsConsumer.class).bigQueueSerDe(byteArraySerde).diskSpaceThresholdGBs(2)
+                .name(poolName).noOfQueues(1).baseDir(producerRecoveryConfig.getBaseDir().resolve("failed_records"))
+                .bigQueueConsumer(new KafkaFailedRecordsConsumer(this)).bigQueueSerDe(new ByteArraySerde()).diskSpaceThresholdGBs(2)
                 .build());
     }
 
 
-    @Override
-    public void publish(ProducerRecord<String, byte[]> record) throws HevoException {
+    public void publish(ProducerRecord<byte[], byte[]> record) throws RecoveryException {
         publish(record, null);
     }
 
-    @Override
-    public void publish(ProducerRecord<String, byte[]> record, HevoRecordCallback recordCallback) throws HevoException {
-        publish(record, recordCallback, Lists.newArrayList());
-    }
+    public void publish(ProducerRecord<byte[], byte[]> record, RecoverableCallback recoverableCallback) throws RecoveryException {
+        byte[] recoveryRecordBytes = this.recoverableProducerRecordSerde.serialize(buildProducerRecoveryRecord(record, recoverableCallback));
 
-    @Override
-    public void publish(ProducerRecord<String, byte[]> record, HevoRecordCallback recordCallback, List<HevoRecordTag> recordTags) throws HevoException {
-        byte[] recoveryRecordBytes = this.recoverableProducerRecordSerde.serialize(buildProducerRecoveryRecord(record,
-                recordCallback, recordTags));
-
-        if (!this.recoverableRecordStore.recoveryEnabled()) {
-            this.embeddedProducer.publish(record, recordCallback, recordTags);
-            return;
-        }
         try {
-            long marker = this.hevoRecoveryManager.publishRecord(recoveryRecordBytes);
-
+            long marker = this.recoverableRecordStore.publishRecord(recoveryRecordBytes);
             this.recoverableRecordTracker.preRecordBuffering(marker);
             try {
-                this.hevoKafkaProducer.publish(record, new RecoverableRecordTrackerCallback(recordCallback,
-                                recoverableRecordTracker, marker, markerRef ->
-                        {
-                            try {
-                                bigQueuePool.publishRecord(this.hevoRecoveryManager.getRecord(markerRef));
-                                lastFailedMarker.setData(markerRef);
-                            } catch (Exception e) {
-                                log.error("Publishing failed record to big queue failed for marker {}", markerRef, e);
-                                return false;
-                            }
-                            return true;
-                        }),
-                        recordTags);
+                this.embeddedProducer.send(record, new RecoverableCallbackWrapper(recoverableCallback, this.recoverableRecordTracker,
+                        marker, markerRef -> {
+                    try {
+                        bigQueuePool.publishRecord(this.recoverableRecordStore.getRecord(markerRef));
+                        lastFailedMarker.setData(markerRef);
+                    } catch (Exception e) {
+                        log.error("Publishing failed record to big queue failed for marker {}", markerRef, e);
+                        return false;
+                    }
+                    return true;
+                }));
+
             } catch (Exception e) {
                 this.recoverableRecordTracker.recordBufferingFailed(marker);
                 throw e;
             }
             this.recoverableRecordTracker.recordBuffered(marker);
         } catch (RecoveryDisabledException e) {
-            log.warn("Recovery disabled for producer {}", producerId());
+            log.warn("Recovery disabled for producer {}", id);
         }
-
     }
 
-
-    private RecoverableProducerRecord buildProducerRecoveryRecord(ProducerRecord<String, byte[]> record, HevoRecordCallback recordCallback, List<HevoRecordTag> recordTags) {
+    private RecoverableProducerRecord buildProducerRecoveryRecord(ProducerRecord<byte[], byte[]> record, RecoverableCallback recoverableCallback) {
         return RecoverableProducerRecord.builder().topic(record.topic())
                 .partition(record.partition()).key(record.key()).message(record.value())
-                .tags(recordTags).hevoRecordCallback(recordCallback).build();
+                .recoverableCallback(recoverableCallback).build();
 
     }
 
@@ -145,38 +129,36 @@ public class RecoverableKafkaProducer {
             this.recoverableRecordStore.close();
         } catch (Exception e) {
             log.error("Recoverable kafka producer close failed", e);
-            throw new HevoRuntimeException(e.getMessage());
+            throw new RecoveryRuntimeException(e.getMessage());
         }
     }
 
     public void republishRecoveryRecord(byte[] recoveryRecord) throws RecoveryException, IOException {
         RecoverableProducerRecord recoverableProducerRecord = this.recoverableProducerRecordSerde.deserialize(recoveryRecord);
-        ProducerRecord<String, byte[]> producerRecord =
+        ProducerRecord<byte[], byte[]> producerRecord =
                 new ProducerRecord<>(recoverableProducerRecord.getTopic(),
                         recoverableProducerRecord.getKey(), recoverableProducerRecord.getMessage());
 
-        this.publish(producerRecord, recoverableProducerRecord.getHevoRecordCallback(),
-                recoverableProducerRecord.getTags());
+        this.publish(producerRecord, recoverableProducerRecord.getRecoverableCallback());
     }
 
     public void cleanUp() throws RecoveryException {
         try {
-            log.info("Cleanup started for recoverable kafka producer {}", producerId());
+            log.info("Cleanup started for recoverable kafka producer {}", id);
             doCleanup();
-            log.info("Cleanup succeeded for recoverable kafka producer {}", producerId());
+            log.info("Cleanup succeeded for recoverable kafka producer {}", id);
         } catch (Exception e) {
-            log.error("Cleanup failed for recoverable kafka producer {}", producerId(), e);
+            log.error("Cleanup failed for recoverable kafka producer {}", id, e);
             throw new RecoveryException(e.getMessage());
         }
     }
 
-    @Retry(attempts = 3, waitTime = 100)
     private void doCleanup() throws TimeoutException, IOException {
         this.bigQueuePool.awaitQueueDrain(TimeUtils.fromMinutesToMillis(5), TimeUtils.fromSecondsToMillis(1));
         long lastFailedMarkerRef = lastFailedMarker.get();
-        this.flush();
+        this.embeddedProducer.flush();
         if (lastFailedMarkerRef != lastFailedMarker.get()) {
-            throw new HevoRuntimeException("Failed records queue not empty");
+            throw new RecoveryRuntimeException("Failed records queue not empty");
         }
         this.bigQueuePool.cleanUp();
     }

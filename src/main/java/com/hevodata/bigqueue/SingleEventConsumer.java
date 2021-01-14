@@ -1,9 +1,5 @@
 package com.hevodata.bigqueue;
-
-import io.hevo.core.app.ShutdownFlag;
-import io.hevo.core.exceptions.HevoException;
-import io.hevo.core.utils.HevoExceptionUtils;
-import io.hevo.core.utils.TimeUtils;
+import com.hevodata.exceptions.RecoveryException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -43,5 +39,5 @@ public abstract class SingleEventConsumer<T> extends BaseBigQueueConsumer<T> {
         }
     }
 
-    public abstract void consumeValue(T value) throws HevoException;
+    public abstract void consumeValue(T value) throws RecoveryException;
 }

@@ -17,11 +17,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class BigQueuePool<T> {
 
     private static final String QUEUE_PREFIX = "queue-";
-    private List<IBigQueue> queues = Lists.newArrayList();
-    private ExecutorService executor;
-    private ScheduledExecutorService bigQueueGcExecutor;
-    private ScheduledExecutorService diskSpaceMonitor;
-    private BigQueuePoolConfiguration<T> bigQueuePoolConfiguration;
+    private final List<IBigQueue> queues = Lists.newArrayList();
+    private final ExecutorService executor;
+    private final ScheduledExecutorService bigQueueGcExecutor;
+    private final ScheduledExecutorService diskSpaceMonitor;
+    private final BigQueuePoolConfiguration<T> bigQueuePoolConfiguration;
 
     private volatile boolean diskSpaceThresholdBreached = false;
     private AtomicInteger runningToken = new AtomicInteger(-1);
@@ -82,8 +82,7 @@ public class BigQueuePool<T> {
                 IBigQueue bigQueue = new BigQueueImpl(queueDir.getAbsolutePath(), QUEUE_PREFIX + i, bigQueuePoolConfiguration.getPageSize());
                 queues.add(bigQueue);
 
-                BaseBigQueueConsumer<T> bigQueueConsumer = bigQueuePoolConfiguration.getBigQueueConsumerType().newInstance();
-                bigQueueConsumer.initialize(bigQueuePoolConfiguration.getBigQueueSerDe(), bigQueue, bigQueuePoolConfiguration.getBigQueueConsumerConfig());
+                bigQueuePoolConfiguration.getBigQueueConsumer().initialize(bigQueuePoolConfiguration.getBigQueueSerDe(), bigQueue, bigQueuePoolConfiguration.getBigQueueConsumerConfig());
                 executor.execute(bigQueueConsumer::run);
             }
         }catch (Exception e){
