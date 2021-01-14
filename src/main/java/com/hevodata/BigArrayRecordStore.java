@@ -124,11 +124,6 @@ public class BigArrayRecordStore implements RecoverableRecordStore {
         }
     }
 
-    @Override
-    public void setRecoverable(boolean recoverable) {
-        recoveryDisabled = !recoverable;
-    }
-
     private void monitorDiskSpace() {
         long totalDirSize = FileUtils.sizeOfDirectory(new File(basePath.toString())) / (1024 * 1024 * 1024);
         recoveryDisabled = totalDirSize > diskSpaceThreshold;

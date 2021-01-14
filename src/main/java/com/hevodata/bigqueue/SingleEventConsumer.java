@@ -36,7 +36,7 @@ public abstract class SingleEventConsumer<T> implements BigQueueConsumer<T> {
     }
 
     @Override
-    public void close() {
+    public void shutdown() {
         shutdown = true;
     }
 

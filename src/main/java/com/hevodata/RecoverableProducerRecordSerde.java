@@ -34,7 +34,7 @@ public class RecoverableProducerRecordSerde {
 
         ByteBuffer byteBuffer = ByteBuffer.allocate(bufferSize);
         byteBuffer.put(RecoveryConstants.CURRENT_VERSION);
-        byteBuffer.put(recoverableProducerRecord.getKey());
+        ByteBufferUtils.putBytes(byteBuffer, recoverableProducerRecord.getKey());
         ByteBufferUtils.putUTF8String(byteBuffer, recoverableProducerRecord.getTopic());
         byteBuffer.putInt(Optional.ofNullable(recoverableProducerRecord.getPartition()).orElse(-1));
         updateRecordCallback(byteBuffer, recordCallbackBytes, recoverableProducerRecord.getRecoverableCallback());

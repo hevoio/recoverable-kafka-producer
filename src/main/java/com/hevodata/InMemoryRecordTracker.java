@@ -33,8 +33,6 @@ public class InMemoryRecordTracker implements RecoverableRecordTracker {
     private final ScheduledExecutorService flushService =
             Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("record-tracker-flush-%d").build());
 
-    private final ScheduledExecutorService markerCleanupService =
-            Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("record-tracker-marker-cleanup-%d").build());
 
     public InMemoryRecordTracker(Path baseDataDir) {
         this.baseDataDir = baseDataDir.resolve("tracker");
@@ -124,7 +122,6 @@ public class InMemoryRecordTracker implements RecoverableRecordTracker {
 
     @Override
     public void close() {
-        markerCleanupService.shutdownNow();
         flushService.shutdownNow();
         flushLatestMarker();
     }

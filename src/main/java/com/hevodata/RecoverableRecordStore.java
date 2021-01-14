@@ -12,6 +12,4 @@ public interface RecoverableRecordStore extends AutoCloseable {
     long consumeRecoverableRecords(ThrowingBiConsumer<Long, byte[]> recoveryRecordConsumer) throws RecoveryException;
 
     void markInitialized() throws RecoveryException;
-
-    void setRecoverable(boolean recoverable);
 }

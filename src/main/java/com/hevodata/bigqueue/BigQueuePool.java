@@ -90,6 +90,7 @@ public class BigQueuePool<T> {
         try {
             bigQueueGcExecutor.shutdownNow();
             diskSpaceMonitor.shutdownNow();
+            bigQueuePoolConfiguration.getBigQueueConsumer().shutdown();
             executor.shutdown();
             try {
                 executor.awaitTermination(30, TimeUnit.SECONDS);

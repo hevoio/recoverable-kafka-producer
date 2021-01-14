@@ -3,7 +3,9 @@ package com.hevodata;
 import com.hevodata.commons.ThrowingConsumer;
 import com.hevodata.exceptions.RecoveryException;
 
-public interface RecoverableRecordTracker extends AutoCloseable {
+import java.io.Closeable;
+
+public interface RecoverableRecordTracker extends Closeable {
 
     void preRecordBuffering(long marker) throws RecoveryException;
 

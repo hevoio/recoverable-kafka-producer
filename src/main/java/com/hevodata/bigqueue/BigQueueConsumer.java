@@ -5,6 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.Closeable;
 
-public interface BigQueueConsumer<T> extends Closeable {
+public interface BigQueueConsumer<T> {
+
     void run(BigQueueSerDe<T> bigQueueSerDe, IBigQueue bigQueue, BigQueueConsumerConfig bigQueueConsumerConfig);
+
+    void shutdown();
 }
