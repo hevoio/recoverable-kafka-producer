@@ -18,7 +18,7 @@ public class BigQueuePoolConfiguration<T> {
     private Path baseDir;
     @Builder.Default
     private BigQueueConsumerConfig bigQueueConsumerConfig = new BigQueueConsumerConfig();
-    private BaseBigQueueConsumer<T> bigQueueConsumer;
+    private BigQueueConsumer<T> bigQueueConsumer;
     private BigQueueSerDe<T> bigQueueSerDe;
     int diskSpaceThresholdGBs = 10;
     @Builder.Default

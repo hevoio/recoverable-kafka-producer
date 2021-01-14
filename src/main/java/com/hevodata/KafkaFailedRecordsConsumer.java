@@ -9,7 +9,7 @@ import java.io.IOException;
 @Slf4j
 public class KafkaFailedRecordsConsumer extends SingleEventConsumer<byte[]> {
 
-    private RecoverableKafkaProducer recoverableKafkaProducer;
+    private final RecoverableKafkaProducer recoverableKafkaProducer;
 
     public KafkaFailedRecordsConsumer(RecoverableKafkaProducer recoverableKafkaProducer) {
         this.recoverableKafkaProducer = recoverableKafkaProducer;

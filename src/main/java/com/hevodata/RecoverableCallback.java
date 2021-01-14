@@ -6,5 +6,5 @@ public interface RecoverableCallback {
 
     void onSuccess(RecordMetadata metadata);
 
-    boolean onFailure(RecordMetadata metadata, Exception e, boolean recovered);
+    void onFailure(RecordMetadata metadata, Exception e, boolean recovered);
 }

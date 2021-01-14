@@ -67,7 +67,6 @@ public class InMemoryRecordTracker implements RecoverableRecordTracker {
         this.markerFlushConsumers.add(markerFlushConsumer);
     }
 
-
     @Override
     public long flushedTill() throws RecoveryException {
         try {

@@ -42,8 +42,7 @@ public class BigArrayRecordStore implements RecoverableRecordStore {
             this.diskSpaceThreshold = diskSpaceThreshold;
             this.basePath = basePath;
             Files.createDirectories(this.basePath);
-            bigArray = getBigArray(this.basePath.toString(),
-                    "data", BigArrayImpl.DEFAULT_DATA_PAGE_SIZE);
+            bigArray = getBigArray(this.basePath.toString(), "data", BigArrayImpl.DEFAULT_DATA_PAGE_SIZE);
             this.recoverableRecordTracker = recoverableRecordTracker;
             this.maxParallelism = maxParallelism;
             this.recoverableRecordTracker.addMarkerFlushConsumer(marker -> {
@@ -126,20 +125,13 @@ public class BigArrayRecordStore implements RecoverableRecordStore {
     }
 
     @Override
-    public boolean recoveryEnabled() {
-        return !recoveryDisabled;
-    }
-
-    @Override
     public void setRecoverable(boolean recoverable) {
         recoveryDisabled = !recoverable;
-
     }
 
     private void monitorDiskSpace() {
         long totalDirSize = FileUtils.sizeOfDirectory(new File(basePath.toString())) / (1024 * 1024 * 1024);
         recoveryDisabled = totalDirSize > diskSpaceThreshold;
-
     }
 
     @Override

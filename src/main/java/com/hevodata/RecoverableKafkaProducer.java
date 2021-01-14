@@ -12,12 +12,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 @Slf4j
-public class RecoverableKafkaProducer {
+public class RecoverableKafkaProducer implements Closeable {
 
     private KafkaProducer<byte[], byte[]> embeddedProducer;
     private RecoverableRecordStore recoverableRecordStore;
@@ -123,6 +124,7 @@ public class RecoverableKafkaProducer {
     }
 
 
+    @Override
     public void close() {
         try {
             this.embeddedProducer.close();

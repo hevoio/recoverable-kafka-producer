@@ -13,7 +13,5 @@ public interface RecoverableRecordStore extends AutoCloseable {
 
     void markInitialized() throws RecoveryException;
 
-    boolean recoveryEnabled();
-
     void setRecoverable(boolean recoverable);
 }

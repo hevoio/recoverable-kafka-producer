@@ -2,6 +2,9 @@ package com.hevodata.bigqueue;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.hevodata.commons.Utils;
+import com.hevodata.exceptions.RecoveryException;
+import com.hevodata.exceptions.RecoveryRuntimeException;
 import com.leansoft.bigqueue.BigQueueImpl;
 import com.leansoft.bigqueue.IBigQueue;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +27,7 @@ public class BigQueuePool<T> {
     private final BigQueuePoolConfiguration<T> bigQueuePoolConfiguration;
 
     private volatile boolean diskSpaceThresholdBreached = false;
-    private AtomicInteger runningToken = new AtomicInteger(-1);
+    private final AtomicInteger runningToken = new AtomicInteger(-1);
     private static final int TOKEN_RESET_LIMIT = 1000000;
 
 
@@ -32,30 +35,24 @@ public class BigQueuePool<T> {
         this.bigQueuePoolConfiguration = bigQueuePoolConfiguration;
         executor = Executors.newFixedThreadPool(bigQueuePoolConfiguration.getNoOfQueues(), new ThreadFactoryBuilder().setNameFormat("bigq-pool-%d").build());
         bigQueueGcExecutor = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("bigq-gc-executor-%d").build());
-        bigQueueGcExecutor.scheduleAtFixedRate(this::performGc,1, 5, TimeUnit.MINUTES);
+        bigQueueGcExecutor.scheduleAtFixedRate(this::performGc, 1, 5, TimeUnit.MINUTES);
         diskSpaceMonitor = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("bigq-diskspace-monitor-%d").build());
         diskSpaceMonitor.scheduleAtFixedRate(this::monitorDiskSpace, 10, 10, TimeUnit.MINUTES);
         init();
-        Shutdown.registerHook(new Hook("big_queue_pool_"+ bigQueuePoolConfiguration.getName()) {
-            @Override
-            protected void onShutdown() {
-                close(false);
-            }
-        });
     }
 
-    public void publishRecord(T record) throws IOException, HevoException {
+    public void publishRecord(T record) throws IOException, RecoveryException {
         byte[] bytes = bigQueuePoolConfiguration.getBigQueueSerDe().serialize(record);
         if (diskSpaceThresholdBreached) {
-            throw new HevoRuntimeException("Buffer disk space threshold breached");
+            throw new RecoveryRuntimeException("Buffer disk space threshold breached");
         }
-        if(1 == this.queues.size()) {
+        if (1 == this.queues.size()) {
             this.queues.get(0).enqueue(bytes);
             return;
         }
         int currentToken = runningToken.incrementAndGet();
         this.queues.get((currentToken % queues.size())).enqueue(bytes);
-        if(runningToken.get() > TOKEN_RESET_LIMIT) {
+        if (runningToken.get() > TOKEN_RESET_LIMIT) {
             runningToken.set(-1);
         }
     }
@@ -76,34 +73,28 @@ public class BigQueuePool<T> {
                 File queueDir = bigQueuePoolConfiguration.getBaseDir().resolve(QUEUE_PREFIX + i).toFile();
                 if (!queueDir.exists()) {
                     if (!queueDir.mkdirs()) {
-                        throw new HevoRuntimeException(String.format("Unable to create directory %s", queueDir.getAbsolutePath()));
+                        throw new RecoveryRuntimeException(String.format("Unable to create directory %s", queueDir.getAbsolutePath()));
                     }
                 }
                 IBigQueue bigQueue = new BigQueueImpl(queueDir.getAbsolutePath(), QUEUE_PREFIX + i, bigQueuePoolConfiguration.getPageSize());
                 queues.add(bigQueue);
-
-                bigQueuePoolConfiguration.getBigQueueConsumer().initialize(bigQueuePoolConfiguration.getBigQueueSerDe(), bigQueue, bigQueuePoolConfiguration.getBigQueueConsumerConfig());
-                executor.execute(bigQueueConsumer::run);
+                executor.execute(() -> bigQueuePoolConfiguration.getBigQueueConsumer().run(bigQueuePoolConfiguration.getBigQueueSerDe(), bigQueue, bigQueuePoolConfiguration.getBigQueueConsumerConfig()));
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error("Big Queue Pool initialization failed", e);
-            throw new HevoRuntimeException(e.getMessage());
+            throw new RecoveryRuntimeException(e.getMessage());
         }
     }
 
-    public void close(boolean force) {
+    public void close() {
         try {
             bigQueueGcExecutor.shutdownNow();
             diskSpaceMonitor.shutdownNow();
-            if (force) {
+            executor.shutdown();
+            try {
+                executor.awaitTermination(30, TimeUnit.SECONDS);
+            } catch (Exception e) {
                 executor.shutdownNow();
-            } else {
-                executor.shutdown();
-                try {
-                    executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    executor.shutdownNow();
-                }
             }
             for (IBigQueue bigQueue : queues) {
                 bigQueue.close();
@@ -111,7 +102,7 @@ public class BigQueuePool<T> {
             }
         } catch (IOException e) {
             log.error("Big Queue Pool cleanup failed", e);
-            throw new HevoRuntimeException(e.getMessage());
+            throw new RecoveryRuntimeException(e.getMessage());
         }
     }
 
@@ -126,17 +117,17 @@ public class BigQueuePool<T> {
             }
             totalSize = size();
             if (totalSize > 0) {
-                HevoThreadUtils.interruptIgnoredSleep(millisToSleep);
+                Utils.interruptIgnoredSleep(millisToSleep);
             }
         } while (totalSize > 0);
     }
 
-    private void performGc(){
+    private void performGc() {
         try {
             for (IBigQueue bigQueue : queues) {
                 bigQueue.gc();
             }
-        }catch (IOException e){
+        } catch (IOException e) {
             log.error("Gc failed for BigQueue Pool", e);
         }
     }
@@ -145,12 +136,12 @@ public class BigQueuePool<T> {
         for (IBigQueue bigQueue : queues) {
             bigQueue.removeAll();
         }
-        close(true);
+        close();
         FileUtils.deleteDirectory(bigQueuePoolConfiguration.getBaseDir().toFile());
     }
 
     private void monitorDiskSpace() {
-        long totalDirSize = MeasurementUtils.bytesToGBs(FileUtils.sizeOfDirectory(bigQueuePoolConfiguration.getBaseDir().toFile()));
+        long totalDirSize = Utils.bytesToGBs(FileUtils.sizeOfDirectory(bigQueuePoolConfiguration.getBaseDir().toFile()));
         diskSpaceThresholdBreached = totalDirSize > bigQueuePoolConfiguration.getDiskSpaceThresholdGBs();
     }
 }

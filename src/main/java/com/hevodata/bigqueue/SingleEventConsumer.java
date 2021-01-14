@@ -1,42 +1,43 @@
 package com.hevodata.bigqueue;
+
+import com.hevodata.commons.TimeUtils;
+import com.hevodata.commons.Utils;
 import com.hevodata.exceptions.RecoveryException;
+import com.leansoft.bigqueue.IBigQueue;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * Processes one event at a time and follows the At least once semantics
  */
 @Slf4j
-public abstract class SingleEventConsumer<T> extends BaseBigQueueConsumer<T> {
+public abstract class SingleEventConsumer<T> implements BigQueueConsumer<T> {
+
+    private volatile boolean shutdown;
 
     @Override
-    public void run() {
+    public void run(BigQueueSerDe<T> bigQueueSerDe, IBigQueue bigQueue, BigQueueConsumerConfig bigQueueConsumerConfig) {
 
-        while (!ShutdownFlag.get()) {
+        while (!shutdown) {
             try {
-                byte[] bytes = this.bigQueue.peek();
+                byte[] bytes = bigQueue.peek();
                 if (bytes == null) {
-                    Thread.sleep(TimeUtils.fromSecondsToMillis(bigQueueConsumerConfig.getSleepTimeInSecs()));
+                    Utils.interruptIgnoredSleep(TimeUtils.fromSecondsToMillis(bigQueueConsumerConfig.getSleepTimeInSecs()));
                     continue;
                 }
-                T value = this.bigQueueSerDe.deserialize(bytes);
+                T value = bigQueueSerDe.deserialize(bytes);
                 consumeValue(value);
-                this.bigQueue.dequeue();
+                bigQueue.dequeue();
 
             } catch (Exception e) {
-                logException(e);
-                try {
-                    Thread.sleep(TimeUtils.fromSecondsToMillis(bigQueueConsumerConfig.getSleepTimeInSecs()));
-                } catch (InterruptedException e1) {
-                    //ignore
-                }
+                log.error("Big queue consumer poll failed", e);
+                Utils.interruptIgnoredSleep(1000);
             }
         }
     }
 
-    private void logException(Exception e) {
-        if (!HevoExceptionUtils.exceptionContainsMessage(e, "sleep interrupted")) {
-            log.error("Big queue consumer poll failed", e);
-        }
+    @Override
+    public void close() {
+        shutdown = true;
     }
 
     public abstract void consumeValue(T value) throws RecoveryException;
