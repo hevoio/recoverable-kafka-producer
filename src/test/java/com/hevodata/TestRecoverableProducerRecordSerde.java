@@ -1,6 +1,5 @@
 package com.hevodata;
 
-import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hevodata.exceptions.RecoveryRuntimeException;
 import lombok.AllArgsConstructor;

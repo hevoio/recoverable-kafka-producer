@@ -52,6 +52,7 @@ public class RecoverableKafkaProducer implements Closeable {
         this.recoverableRecordStore = recoverableRecordStore;
         this.producerRecoveryConfig = producerRecoveryConfig;
         this.id = UUID.randomUUID().toString();
+        log.info("Initializing producer {}", id);
         initializeFailedRecordsQueue();
         consumeRecoverableRecords();
 

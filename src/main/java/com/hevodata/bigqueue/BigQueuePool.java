@@ -44,7 +44,7 @@ public class BigQueuePool<T> {
     public void publishRecord(T record) throws IOException, RecoveryException {
         byte[] bytes = bigQueuePoolConfiguration.getBigQueueSerDe().serialize(record);
         if (diskSpaceThresholdBreached) {
-            throw new RecoveryRuntimeException("Buffer disk space threshold breached");
+            throw new RecoveryException("Buffer disk space threshold breached");
         }
         if (1 == this.queues.size()) {
             this.queues.get(0).enqueue(bytes);
@@ -61,7 +61,6 @@ public class BigQueuePool<T> {
         int totalSize = 0;
         for (IBigQueue bigQueue : queues) {
             totalSize += bigQueue.size();
-
         }
         return totalSize;
     }
