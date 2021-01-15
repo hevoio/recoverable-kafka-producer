@@ -134,7 +134,7 @@ public class RecoverableKafkaProducer implements Closeable {
             this.embeddedProducer.close();
             this.recoverableRecordStore.close();
         } catch (Exception e) {
-            log.error("Recoverable kafka producer close failed", e);
+            log.error("Failed to close producer {}", id, e);
             throw new RecoveryRuntimeException(e.getMessage());
         }
     }
@@ -149,11 +149,18 @@ public class RecoverableKafkaProducer implements Closeable {
     }
 
     public void cleanUp() throws RecoveryException {
-        try {
-            doCleanup();
-        } catch (Exception e) {
-            log.error("Cleanup failed for recoverable kafka producer {}", id, e);
-            throw new RecoveryException(e.getMessage());
+
+        int RETRIES = 3;
+        for (int i = 1; i <= RETRIES; i++) {
+            try {
+                doCleanup();
+            } catch (Exception e) {
+                if (i < RETRIES) {
+                    continue;
+                }
+                log.error("Cleanup failed for recoverable kafka producer {}", id, e);
+                throw new RecoveryException(e.getMessage());
+            }
         }
     }
 
@@ -162,7 +169,7 @@ public class RecoverableKafkaProducer implements Closeable {
         long lastFailedMarkerRef = lastFailedMarker.get();
         this.embeddedProducer.flush();
         if (lastFailedMarkerRef != lastFailedMarker.get()) {
-            throw new RecoveryRuntimeException("Failed records queue not empty");
+            throw new RecoveryRuntimeException("Cleanup aborted as the failed records queue is not drained");
         }
         this.bigQueuePool.cleanUp();
     }

@@ -74,11 +74,10 @@ public class RecoverableKafkaProducerSample {
     public void publishMessageWithCallback() throws RecoveryException {
         KafkaProducer<byte[], byte[]> kafkaProducer = buildProducer();
         ProducerRecoveryConfig producerRecoveryConfig = ProducerRecoveryConfig.builder().baseDir(Paths.get("/Users/arun/Downloads/kafka_test/"))
-                .callbackSerde(new DummyCallbackSerde()).build();
+                .callbackSerde(new DummyCallbackSerde()).maxParallelism(10).build();
         RecoverableKafkaProducer recoverableKafkaProducer = new RecoverableKafkaProducer(kafkaProducer, producerRecoveryConfig);
         ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>("topic1", null, "key".getBytes(),"value".getBytes());
-        recoverableKafkaProducer.publish(producerRecord);
-        recoverableKafkaProducer.close();
+        recoverableKafkaProducer.publish(producerRecord,  new DummyCallback());
 
     }
 
