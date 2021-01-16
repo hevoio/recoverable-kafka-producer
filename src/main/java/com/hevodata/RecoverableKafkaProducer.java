@@ -149,6 +149,7 @@ public class RecoverableKafkaProducer implements Closeable {
         for (int i = 1; i <= RETRIES; i++) {
             try {
                 doCleanup();
+                return;
             } catch (Exception e) {
                 if (i < RETRIES) {
                     continue;
