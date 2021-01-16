@@ -6,6 +6,7 @@ import com.hevodata.bigqueue.serde.ByteArraySerde;
 import com.hevodata.commons.CallbackWrapper;
 import com.hevodata.commons.TimeUtils;
 import com.hevodata.commons.Wrapper;
+import com.hevodata.config.ProducerRecoveryConfig;
 import com.hevodata.exceptions.RecoveryDisabledException;
 import com.hevodata.exceptions.RecoveryException;
 import com.hevodata.exceptions.RecoveryRuntimeException;
@@ -31,18 +32,12 @@ public class RecoverableKafkaProducer implements Closeable {
     private String id;
 
     public RecoverableKafkaProducer(KafkaProducer<byte[], byte[]> embeddedProducer, ProducerRecoveryConfig producerRecoveryConfig) throws RecoveryException {
-        RecoverableRecordTracker recoverableRecordTracker = new InMemoryRecordTracker(producerRecoveryConfig.getBaseDir().resolve("tracker"));
-        RecoverableRecordStore recoverableRecordStore = new BigArrayRecordStore(producerRecoveryConfig.getBaseDir().resolve("data"), recoverableRecordTracker,
+        RecoverableRecordTracker recoverableRecordTracker = new InMemoryRecordTracker(producerRecoveryConfig.getBaseDir(),
+                producerRecoveryConfig.getRecordTrackerConfig());
+        RecoverableRecordStore recoverableRecordStore = new BigArrayRecordStore(producerRecoveryConfig.getBaseDir().resolve("record_store"), recoverableRecordTracker,
                 producerRecoveryConfig.getMaxParallelism(), producerRecoveryConfig.getDiskSpaceThreshold());
         this.recoverableProducerRecordSerde = new RecoverableProducerRecordSerde(producerRecoveryConfig.getCallbackSerde());
         doInitializeProducer(embeddedProducer, producerRecoveryConfig, recoverableRecordStore, recoverableRecordTracker);
-    }
-
-    public RecoverableKafkaProducer(KafkaProducer<byte[], byte[]> embeddedProducer, ProducerRecoveryConfig producerRecoveryConfig,
-                                    RecoverableRecordStore recoverableRecordStore, RecoverableRecordTracker recoverableRecordTracker) throws RecoveryException {
-        this.recoverableProducerRecordSerde = new RecoverableProducerRecordSerde(producerRecoveryConfig.getCallbackSerde());
-        doInitializeProducer(embeddedProducer, producerRecoveryConfig, recoverableRecordStore, recoverableRecordTracker);
-
     }
 
     private void doInitializeProducer(KafkaProducer<byte[], byte[]> embeddedProducer, ProducerRecoveryConfig producerRecoveryConfig,

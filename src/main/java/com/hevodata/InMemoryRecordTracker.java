@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hevodata.commons.ThrowingConsumer;
+import com.hevodata.config.RecordTrackerConfig;
 import com.hevodata.exceptions.RecoveryException;
 import com.hevodata.exceptions.RecoveryRuntimeException;
 import lombok.extern.slf4j.Slf4j;
@@ -34,10 +35,10 @@ public class InMemoryRecordTracker implements RecoverableRecordTracker {
             Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("record-tracker-flush-%d").build());
 
 
-    public InMemoryRecordTracker(Path baseDataDir) {
+    public InMemoryRecordTracker(Path baseDataDir, RecordTrackerConfig recordTrackerConfig) {
         this.baseDataDir = baseDataDir.resolve("tracker");
-        flushService.scheduleAtFixedRate(this::flushLatestMarker, 1, 1,
-                TimeUnit.MINUTES);
+        flushService.scheduleAtFixedRate(this::flushLatestMarker, recordTrackerConfig.getInitialFlushDelaySecs(),
+                recordTrackerConfig.getFlushFrequencySecs(), TimeUnit.SECONDS);
     }
 
     @Override

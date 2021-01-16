@@ -1,5 +1,6 @@
-package com.hevodata;
+package com.hevodata.config;
 
+import com.hevodata.CallbackSerde;
 import lombok.*;
 
 import java.nio.file.Path;
@@ -17,4 +18,7 @@ public class ProducerRecoveryConfig {
 
     //this serde will be used to serialize/deserialize producer callbacks if present
     private final CallbackSerde callbackSerde;
+
+    @Builder.Default
+    private final RecordTrackerConfig recordTrackerConfig = new RecordTrackerConfig();
 }

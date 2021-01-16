@@ -1,7 +1,12 @@
-package com.hevodata;
+package com.hevodata.samples;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
+import com.hevodata.CallbackSerde;
+import com.hevodata.RecoverableCallback;
+import com.hevodata.RecoverableKafkaProducer;
+import com.hevodata.config.ProducerRecoveryConfig;
+import com.hevodata.config.RecordTrackerConfig;
 import com.hevodata.exceptions.RecoveryException;
 import com.hevodata.exceptions.RecoveryRuntimeException;
 import lombok.AllArgsConstructor;
@@ -63,7 +68,7 @@ public class RecoverableKafkaProducerSample {
     public void publishMessage() throws RecoveryException {
 
         KafkaProducer<byte[], byte[]> kafkaProducer = buildProducer();
-        ProducerRecoveryConfig producerRecoveryConfig = ProducerRecoveryConfig.builder().baseDir(Paths.get("/Users/arun/Downloads/kafka_test/")).build();
+        ProducerRecoveryConfig producerRecoveryConfig = ProducerRecoveryConfig.builder().baseDir(Paths.get("kafka_test")).build();
         RecoverableKafkaProducer recoverableKafkaProducer = new RecoverableKafkaProducer(kafkaProducer, producerRecoveryConfig);
         ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>("topic1", null, "key".getBytes(),
                 "value".getBytes());
@@ -73,11 +78,15 @@ public class RecoverableKafkaProducerSample {
 
     public void publishMessageWithCallback() throws RecoveryException {
         KafkaProducer<byte[], byte[]> kafkaProducer = buildProducer();
-        ProducerRecoveryConfig producerRecoveryConfig = ProducerRecoveryConfig.builder().baseDir(Paths.get("/Users/arun/Downloads/kafka_test/"))
+        ProducerRecoveryConfig producerRecoveryConfig = ProducerRecoveryConfig.builder().baseDir(Paths.get("kafka_test"))
+                .recordTrackerConfig(new RecordTrackerConfig(1, 1))
                 .callbackSerde(new DummyCallbackSerde()).maxParallelism(10).build();
         RecoverableKafkaProducer recoverableKafkaProducer = new RecoverableKafkaProducer(kafkaProducer, producerRecoveryConfig);
-        ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>("topic1", null, "key".getBytes(),"value".getBytes());
-        recoverableKafkaProducer.publish(producerRecord,  new DummyCallback());
+        for (int i = 0; i < 10000; i++) {
+            ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>("topic1", null, "key".getBytes(), "value".getBytes());
+            recoverableKafkaProducer.publish(producerRecord, new DummyCallback("" + i));
+        }
+        //recoverableKafkaProducer.close();
 
     }
 

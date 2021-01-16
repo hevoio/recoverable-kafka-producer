@@ -8,7 +8,6 @@ import java.nio.charset.StandardCharsets;
 public class ByteBufferUtils {
 
     public static final int SIZE_OF_INT = 4;
-    public static final int SIZE_OF_SHORT = 2;
 
     public static void putUTF8String(ByteBuffer byteBuffer, String value) {
         byte[] valueArray = value.getBytes(StandardCharsets.UTF_8);
