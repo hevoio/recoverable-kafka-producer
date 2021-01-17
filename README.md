@@ -6,11 +6,11 @@ When you write to a kafka broker, using the producer library, the records are fi
 
 ## Delivery Semantics
 
-*Recoverable Producer* gives atleast-once semantics and its also possible that some of the records are pushed out of order(mostly in case of failures)
+*Recoverable Producer* gives atleast-once semantics and its also possible that some of the records are pushed out of order(in case of failure callbacks).
 
 ## Configurations
 
-Sample code for using recoverable producer can be found here. There are few configurations that need to be keep in mind while using the recoverable producer.
+Sample code for using recoverable producer can be found here. There are few configurations that need to be kept in mind while using the recoverable producer.
 
 ### Max parallelism
 
@@ -18,17 +18,21 @@ This parameter indicates the max number of parallel threads, which can perform a
 
 ### Flush frequency
 
-This controls the frequency(in seconds) in which offset check-pointing will be performed. Please note that check-pointing consists of publishing the latest committed offset to a local file and also removing the records before the committed offset from the disk. Default value is 5 seconds.
+This controls the frequency(in seconds), in which offset check-pointing will be performed. Please note that check-pointing consists of publishing the latest committed offset to a local file and also removing the records before the committed offset, from the disk. Default value is 5 seconds.
 
 ### Disk Threshold
 
-This parameter puts an upper bound on the local disk space, the producer will occupy to store the records till the callback is received and flush is performed. This needs to be configured based on the configured kafka buffer size, flush frequency and also the write throughput. In case of disk threshold breach, further attempts to publish the record will result in RecoveryDisabledException. Default value is 20 GB.
+This parameter puts an upper bound on the local disk space, which the producer will occupy to store the records till the callback is received and flush is performed. This needs to be configured based on the configured kafka buffer size, flush frequency and also the write throughput. In case of disk threshold breach, further attempts to publish the record will result in RecoveryDisabledException. Default value is 20 GB.
 
 ## Serializing/Deserializing Callbacks
 
-In case a callback is used with the producer publish, a CallbackSerde should  be provided in the Producer Recovery Config to serialize/deserialize callbacks. Please note that the same producer cannot be used with different callback classes. In such cases, we recommend using different producer objects or handling it upstream by encapsulating the logic into a single Callback class.
+In case a callback is used with the recoverable producer, a CallbackSerde should  be provided in the Producer Recovery Config to serialize/deserialize callbacks. Please note that the same producer cannot be used with different callback classes. In such cases, we recommend using different producer objects or handling it upstream by encapsulating the logic into a single Callback class.
 
 ## Performance
 
 The recoverable producer ideally just adds a few microseconds in addition to the native producer publish. But it can vary based on a lot of factors like message size, environment specs etc. Some of the benchmarks done by BigQueue can be found [here](https://github.com/bulldog2011/bigqueue/wiki/Performance-Test-Report).
+
+## Logging
+
+Recoverable producer uses *slf4j* as the logging facade. A slf4j compatible logging framework needs to be bound to enable logging on the producer side.
 
