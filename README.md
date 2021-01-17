@@ -1,6 +1,6 @@
 # Recoverable Kafka Producer
 
-When you write to a kafka broker, using the producer library, the records are first written to a kafka buffer and the kafka [*sender*](https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/clients/producer/internals/Sender.java) thread is responsible for reading the records from the buffer and reliably syncing those to the broker. The client application can choose to wait for the records to be synced to the broker and only then perform the next steps in the workflow. This mode is very expensive and will not be acceptable for applications which require sub millisecond latencies. Those workflows might choose to just publish the record to the buffer and continue with the rest of the workflow. In such cases, its possible that the records in the buffer might get dropped due to various reasons(application crash, kafka broker crash etc). *Recoverable Producer* was build to solve this problem of attaining data integrity at scale, at Hevo.
+When you write to a kafka broker, using the producer library, the records are first written to a kafka in-memory buffer and the kafka [*sender*](https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/clients/producer/internals/Sender.java) thread is responsible for reading the records from the buffer and reliably syncing those to the broker. The client application can choose to wait for the records to be synced to the broker and only then perform the next steps in the workflow. This mode is very expensive and will not be acceptable for applications which require sub millisecond latencies. Those workflows might choose to just publish the record to the buffer and continue with the rest of the workflow. In such cases, its possible that the records in the buffer might get dropped due to various reasons(application crash, kafka broker crash etc). *Recoverable Producer* was build to solve this problem of achieving data integrity at scale, at Hevo.
 
 *Recovery Producer* works by writing the records to a local, memory-mapped write ahead log before writing to the kafka buffer and having periodic check-pointing of record offsets for which we have got success/failure callbacks. Recoverable producer uses [*Big Queue*](https://github.com/bulldog2011/bigqueue), which provides memory-mapped queues/arrays out of the box and also provides submillisecond latencies. In case of non graceful shutdowns of the recoverable producer, producer will recover possible lost records by replaying from the latest committed check-point. The records, which the sender thread is not able to sync it to the broker will also be pushed to a BigQueue and retried periodically.
 
@@ -10,11 +10,11 @@ When you write to a kafka broker, using the producer library, the records are fi
 
 ## Configurations
 
-Sample code for using recoverable producer can be found here. Few important configuration to be provided are :
+Sample code for using recoverable producer can be found here. There are few configurations that need to be keep in mind while using the recoverable producer.
 
 ### Max parallelism
 
-This parameter indicates the max number of parallel threads, which can perform a publish on the same producer simultaneously. This value is used to work around a multi threaded edge case around the recoverable producer. Default value is 100.
+This parameter indicates the max number of parallel threads, which can perform a publish on the same producer simultaneously. This value is used to work around a multi-threaded edge case around the recoverable producer. Default value is 100.
 
 ### Flush frequency
 
@@ -22,7 +22,7 @@ This controls the frequency(in seconds) in which offset check-pointing will be p
 
 ### Disk Threshold
 
-This parameter puts an upper bound on the disk space, the producer will occupy to store the records till the callback is received and flush is performed. This needs to be configured based on the configured kafka buffer size, flush frequency and also the write throughput. In case of disk threshold breach, further attempts to publish the record will result in RecoveryDisabledException. Default value is 20 GB.
+This parameter puts an upper bound on the local disk space, the producer will occupy to store the records till the callback is received and flush is performed. This needs to be configured based on the configured kafka buffer size, flush frequency and also the write throughput. In case of disk threshold breach, further attempts to publish the record will result in RecoveryDisabledException. Default value is 20 GB.
 
 ## Serializing/Deserializing Callbacks
 
@@ -30,5 +30,5 @@ In case a callback is used with the producer publish, a CallbackSerde should  be
 
 ## Performance
 
-The recovery producer ideally just adds a few microseconds in addition to the native producer publish. But it can vary based on a lot of factors like message size, environment specs etc. Some of the benchmarks done by BigQueue can be found [here](https://github.com/bulldog2011/bigqueue/wiki/Performance-Test-Report).
+The recoverable producer ideally just adds a few microseconds in addition to the native producer publish. But it can vary based on a lot of factors like message size, environment specs etc. Some of the benchmarks done by BigQueue can be found [here](https://github.com/bulldog2011/bigqueue/wiki/Performance-Test-Report).
 
