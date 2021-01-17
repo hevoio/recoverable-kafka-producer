@@ -36,3 +36,13 @@ The recoverable producer ideally just adds a few microseconds in addition to the
 
 Recoverable producer uses *slf4j* as the logging facade. A slf4j compatible logging framework needs to be bound to enable logging on the producer side.
 
+## Maven Import
+
+```
+  <dependency>
+		  <groupId>com.leansoft</groupId>
+		  <artifactId>bigqueue</artifactId>
+      <version>0.7.0</version>
+  </dependency>
+```    
+    
