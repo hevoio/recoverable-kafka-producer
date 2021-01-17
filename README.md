@@ -40,9 +40,9 @@ Recoverable producer uses *slf4j* as the logging facade. A slf4j compatible logg
 
 ```
   <dependency>
-		  <groupId>com.leansoft</groupId>
-		  <artifactId>bigqueue</artifactId>
-      <version>0.7.0</version>
+    <groupId>com.hevodata</groupId>
+    <artifactId>recoverable-kafka-producer</artifactId>
+    <version>1.0</version>
   </dependency>
 ```    
     
