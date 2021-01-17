@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 
-public class RecoverableKafkaProducerSample {
+public class SampleRecoverableKafkaProducer {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -93,7 +93,7 @@ public class RecoverableKafkaProducerSample {
 
     }
 
-    public void doCleanup() throws RecoveryException {
+    public void cleanup() throws RecoveryException {
         KafkaProducer<byte[], byte[]> kafkaProducer = buildProducer();
         ProducerRecoveryConfig producerRecoveryConfig = ProducerRecoveryConfig.builder().baseDir(Paths.get("kafka_test"))
                 .recordTrackerConfig(new RecordTrackerConfig(1, 1))
@@ -113,8 +113,9 @@ public class RecoverableKafkaProducerSample {
 
 
     public static void main(String[] args) throws Exception {
-        RecoverableKafkaProducerSample kafkaProducerSample = new RecoverableKafkaProducerSample();
-        //kafkaProducerSample.publishMessage();
-        kafkaProducerSample.doCleanup();
+        SampleRecoverableKafkaProducer sampleRecoverableKafkaProducer = new SampleRecoverableKafkaProducer();
+        sampleRecoverableKafkaProducer.publishMessage();
+        sampleRecoverableKafkaProducer.publishMessageWithCallback();
+        sampleRecoverableKafkaProducer.cleanup();
     }
 }
