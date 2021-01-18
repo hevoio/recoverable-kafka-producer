@@ -31,11 +31,11 @@
             <scope>test</scope>
         </dependency>
 
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-databind</artifactId>
-        <version>2.12.1</version>
-      </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.12.1</version>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -132,4 +132,11 @@
             </plugin>
         </plugins>
     </build>
+    <distributionManagement>
+        <repository>
+            <id>bintray-hevo-recoverable-kafka-producer</id>
+            <name>hevo-recoverable-kafka-producer</name>
+            <url>https://api.bintray.com/maven/hevo/recoverable-kafka-producer/recoverable-kafka-producer/;publish=1</url>
+        </repository>
+    </distributionManagement>
 </project>

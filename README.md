@@ -5,12 +5,12 @@ When you write to a kafka broker using the producer library, the records are fir
 *Recovery Producer* works by writing the records to a local, memory-mapped write ahead log before writing to the kafka buffer and having periodic check-pointing of record offsets for which we have got success/failure callbacks. Recoverable producer uses [*Big Queue*](https://github.com/bulldog2011/bigqueue), which provides memory-mapped queues/arrays out of the box and also provides submillisecond latencies. In case of non graceful shutdowns of the recoverable producer, producer will recover possible lost records by replaying from the latest committed check-point. The records, which the sender thread is not able to sync it to the broker will also be pushed to a BigQueue and retried periodically.
 
 ## Maven Dependency
-```
-  <dependency>
+```xml
+<dependency>
     <groupId>com.hevodata</groupId>
     <artifactId>recoverable-kafka-producer</artifactId>
     <version>1.0</version>
-  </dependency>
+</dependency>
 ```    
 
 ## Delivery Semantics
@@ -19,15 +19,19 @@ When you write to a kafka broker using the producer library, the records are fir
 
 ## Configurations
 
-```
-  KafkaProducer<byte[], byte[]> kafkaProducer = buildProducer();
-  ProducerRecoveryConfig producerRecoveryConfig = ProducerRecoveryConfig.builder().baseDir(Paths.get("kafka_test"))
-    .recordTrackerConfig(new RecordTrackerConfig(5)).callbackSerde(new DummyCallbackSerde()).maxParallelism(10).build();
+```java
+KafkaProducer<byte[], byte[]> kafkaProducer = buildProducer();
+ProducerRecoveryConfig producerRecoveryConfig = ProducerRecoveryConfig.builder()
+    .baseDir(Paths.get("kafka_test"))
+    .recordTrackerConfig(new RecordTrackerConfig(5))
+    .callbackSerde(new DummyCallbackSerde())
+    .maxParallelism(10)
+    .build();
     
-  RecoverableKafkaProducer recoverableKafkaProducer = new RecoverableKafkaProducer(kafkaProducer, producerRecoveryConfig);
-  ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>("topic1", null, "key".getBytes(), "value".getBytes());
-  
-  recoverableKafkaProducer.publish(producerRecord, new DummyCallback("field_value"));
+RecoverableKafkaProducer recoverableKafkaProducer = new RecoverableKafkaProducer(kafkaProducer, producerRecoveryConfig);
+ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>("topic1", null, "key".getBytes(), "value".getBytes());
+
+recoverableKafkaProducer.publish(producerRecord, new DummyCallback("field_value"));
 ```
 
 More sample usages of the recoverable producer can be found [here](https://github.com/hevoio/recoverable-kafka-producer/blob/master/src/main/java/com/hevodata/samples/SampleRecoverableKafkaProducer.java). There are few configurations that need to be kept in mind while using the recoverable producer.

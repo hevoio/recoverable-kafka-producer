@@ -29,3 +29,4 @@ target
 config.yml
 data/*
 !.circleci/config.yml
+settings.xml
