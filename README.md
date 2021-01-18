@@ -46,7 +46,7 @@ This parameter puts an upper bound on the local disk space, which the producer c
 
 ## Serializing/Deserializing Callbacks
 
-In case a [RecoverableCallback](https://github.com/hevoio/recoverable-kafka-producer/blob/master/src/main/java/com/hevodata/RecoverableCallback.java) is used with the recoverable producer, a CallbackSerde should  be provided in the producer configuration to serialize/deserialize callbacks. Please note that the same producer cannot be used with different callback classes. In such cases, we recommend using different producers or handling it upstream by encapsulating the logic into a single RecoverableCallback class.
+In case a [RecoverableCallback](https://github.com/hevoio/recoverable-kafka-producer/blob/master/src/main/java/com/hevodata/RecoverableCallback.java) is used with the recoverable producer, a [CallbackSerde](https://github.com/hevoio/recoverable-kafka-producer/blob/master/src/main/java/com/hevodata/CallbackSerde.java) should  be provided in the producer configuration to serialize/deserialize callbacks. Please note that the same producer cannot be used with different callback classes. In such cases, we recommend using different producers or handling it upstream by encapsulating the logic into a single RecoverableCallback class.
 
 
 ## Performance
@@ -55,7 +55,7 @@ The recoverable producer ideally just adds a few microseconds in addition to the
 
 ## Logging
 
-Recoverable producer uses *slf4j* as the logging facade. A slf4j compatible logging framework needs to be bound to enable logging on the producer side.
+Recoverable producer uses *slf4j* as the logging facade. An slf4j compatible logging framework needs to be bound to enable logging on the producer side.
 
 Please write to dev@hevodata.com for any queries/feedback.
     
