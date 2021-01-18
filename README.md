@@ -19,7 +19,18 @@ When you write to a kafka broker using the producer library, the records are fir
 
 ## Configurations
 
-Sample code for using recoverable producer can be found [here](https://github.com/hevoio/recoverable-kafka-producer/blob/master/src/main/java/com/hevodata/samples/SampleRecoverableKafkaProducer.java). There are few configurations that need to be kept in mind while using the recoverable producer.
+```
+  KafkaProducer<byte[], byte[]> kafkaProducer = buildProducer();
+  ProducerRecoveryConfig producerRecoveryConfig = ProducerRecoveryConfig.builder().baseDir(Paths.get("kafka_test"))
+    .recordTrackerConfig(new RecordTrackerConfig(5)).callbackSerde(new DummyCallbackSerde()).maxParallelism(10).build();
+    
+  RecoverableKafkaProducer recoverableKafkaProducer = new RecoverableKafkaProducer(kafkaProducer, producerRecoveryConfig);
+  ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>("topic1", null, "key".getBytes(), "value".getBytes());
+  
+  recoverableKafkaProducer.publish(producerRecord, new DummyCallback("field_value"));
+```
+
+More sample usages of the recoverable producer can be found [here](https://github.com/hevoio/recoverable-kafka-producer/blob/master/src/main/java/com/hevodata/samples/SampleRecoverableKafkaProducer.java). There are few configurations that need to be kept in mind while using the recoverable producer.
 
 ### Max parallelism
 
@@ -31,11 +42,12 @@ This controls the frequency(in seconds), in which offset check-pointing will be 
 
 ### Disk Threshold
 
-This parameter puts an upper bound on the local disk space, which the producer can occupy to store the records till the callback is received and flush is performed. This needs to be configured based on the configured kafka buffer size, flush frequency and also the write throughput. In case of disk threshold breach, further attempts to publish the record will result in RecoveryDisabledException. Default value is 20 GB.
+This parameter puts an upper bound on the local disk space, which the producer can occupy to store the records till the callback is received and flush is performed. This needs to be configured based on the configured kafka buffer size, flush frequency and also the write throughput. In case of disk threshold breach, further attempts to publish the record will result in [RecoveryDisabledException](https://github.com/hevoio/recoverable-kafka-producer/blob/master/src/main/java/com/hevodata/exceptions/RecoveryDisabledException.java). Default value is 20 GB.
 
 ## Serializing/Deserializing Callbacks
 
 In case a [RecoverableCallback](https://github.com/hevoio/recoverable-kafka-producer/blob/master/src/main/java/com/hevodata/RecoverableCallback.java) is used with the recoverable producer, a CallbackSerde should  be provided in the producer configuration to serialize/deserialize callbacks. Please note that the same producer cannot be used with different callback classes. In such cases, we recommend using different producers or handling it upstream by encapsulating the logic into a single RecoverableCallback class.
+
 
 ## Performance
 
@@ -44,4 +56,6 @@ The recoverable producer ideally just adds a few microseconds in addition to the
 ## Logging
 
 Recoverable producer uses *slf4j* as the logging facade. A slf4j compatible logging framework needs to be bound to enable logging on the producer side.
+
+Please write to dev@hevodata.com for any queries/feedback.
     
