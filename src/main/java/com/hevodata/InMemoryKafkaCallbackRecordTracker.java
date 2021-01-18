@@ -37,7 +37,7 @@ public class InMemoryKafkaCallbackRecordTracker implements RecoverableRecordTrac
 
     public InMemoryKafkaCallbackRecordTracker(Path baseDataDir, RecordTrackerConfig recordTrackerConfig) {
         this.baseDataDir = baseDataDir.resolve("tracker");
-        flushService.scheduleAtFixedRate(this::flushLatestMarker, recordTrackerConfig.getInitialFlushDelaySecs(),
+        flushService.scheduleAtFixedRate(this::flushLatestMarker, recordTrackerConfig.getFlushFrequencySecs(),
                 recordTrackerConfig.getFlushFrequencySecs(), TimeUnit.SECONDS);
     }
 

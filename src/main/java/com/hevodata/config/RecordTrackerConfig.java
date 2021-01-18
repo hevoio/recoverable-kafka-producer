@@ -6,15 +6,11 @@ import lombok.Getter;
 public class RecordTrackerConfig {
 
     public RecordTrackerConfig() {
-        this.initialFlushDelaySecs = 5;
         this.flushFrequencySecs = 5;
     }
 
-    public RecordTrackerConfig(int initialFlushDelaySecs, int flushFrequencySecs) {
-        this.initialFlushDelaySecs = initialFlushDelaySecs;
+    public RecordTrackerConfig(int flushFrequencySecs) {
         this.flushFrequencySecs = flushFrequencySecs;
     }
-
-    private final int initialFlushDelaySecs;
     private final int flushFrequencySecs;
 }

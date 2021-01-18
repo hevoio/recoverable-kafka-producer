@@ -82,7 +82,7 @@ public class SampleRecoverableKafkaProducer {
     public void publishMessageWithCallback() throws RecoveryException {
         KafkaProducer<byte[], byte[]> kafkaProducer = buildProducer();
         ProducerRecoveryConfig producerRecoveryConfig = ProducerRecoveryConfig.builder().baseDir(Paths.get("kafka_test"))
-                .recordTrackerConfig(new RecordTrackerConfig(1, 1))
+                .recordTrackerConfig(new RecordTrackerConfig(5))
                 .callbackSerde(new DummyCallbackSerde()).maxParallelism(10).build();
         RecoverableKafkaProducer recoverableKafkaProducer = new RecoverableKafkaProducer(kafkaProducer, producerRecoveryConfig);
         for (int i = 0; i < 10; i++) {
@@ -96,7 +96,7 @@ public class SampleRecoverableKafkaProducer {
     public void cleanup() throws RecoveryException {
         KafkaProducer<byte[], byte[]> kafkaProducer = buildProducer();
         ProducerRecoveryConfig producerRecoveryConfig = ProducerRecoveryConfig.builder().baseDir(Paths.get("kafka_test"))
-                .recordTrackerConfig(new RecordTrackerConfig(1, 1))
+                .recordTrackerConfig(new RecordTrackerConfig(1))
                 .callbackSerde(new DummyCallbackSerde()).maxParallelism(10).build();
         RecoverableKafkaProducer recoverableKafkaProducer = new RecoverableKafkaProducer(kafkaProducer, producerRecoveryConfig);
         recoverableKafkaProducer.cleanUp();
