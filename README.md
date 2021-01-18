@@ -4,13 +4,22 @@ When you write to a kafka broker using the producer library, the records are fir
 
 *Recovery Producer* works by writing the records to a local, memory-mapped write ahead log before writing to the kafka buffer and having periodic check-pointing of record offsets for which we have got success/failure callbacks. Recoverable producer uses [*Big Queue*](https://github.com/bulldog2011/bigqueue), which provides memory-mapped queues/arrays out of the box and also provides submillisecond latencies. In case of non graceful shutdowns of the recoverable producer, producer will recover possible lost records by replaying from the latest committed check-point. The records, which the sender thread is not able to sync it to the broker will also be pushed to a BigQueue and retried periodically.
 
+## Maven Dependency
+```
+  <dependency>
+    <groupId>com.hevodata</groupId>
+    <artifactId>recoverable-kafka-producer</artifactId>
+    <version>1.0</version>
+  </dependency>
+```    
+
 ## Delivery Semantics
 
 *Recoverable Producer* gives atleast-once semantics and its also possible that some of the records are delivered out of order(in case of failure callbacks).
 
 ## Configurations
 
-Sample code for using recoverable producer can be found here. There are few configurations that need to be kept in mind while using the recoverable producer.
+Sample code for using recoverable producer can be found [here](https://github.com/hevoio/recoverable-kafka-producer/blob/master/src/main/java/com/hevodata/samples/SampleRecoverableKafkaProducer.java). There are few configurations that need to be kept in mind while using the recoverable producer.
 
 ### Max parallelism
 
@@ -26,7 +35,7 @@ This parameter puts an upper bound on the local disk space, which the producer c
 
 ## Serializing/Deserializing Callbacks
 
-In case a RecoverableCallback is used with the recoverable producer, a CallbackSerde should  be provided in the producer configuration to serialize/deserialize callbacks. Please note that the same producer cannot be used with different callback classes. In such cases, we recommend using different producers or handling it upstream by encapsulating the logic into a single RecoverableCallback class.
+In case a [RecoverableCallback](https://github.com/hevoio/recoverable-kafka-producer/blob/master/src/main/java/com/hevodata/RecoverableCallback.java) is used with the recoverable producer, a CallbackSerde should  be provided in the producer configuration to serialize/deserialize callbacks. Please note that the same producer cannot be used with different callback classes. In such cases, we recommend using different producers or handling it upstream by encapsulating the logic into a single RecoverableCallback class.
 
 ## Performance
 
@@ -35,14 +44,4 @@ The recoverable producer ideally just adds a few microseconds in addition to the
 ## Logging
 
 Recoverable producer uses *slf4j* as the logging facade. A slf4j compatible logging framework needs to be bound to enable logging on the producer side.
-
-## Maven Import
-
-```
-  <dependency>
-    <groupId>com.hevodata</groupId>
-    <artifactId>recoverable-kafka-producer</artifactId>
-    <version>1.0</version>
-  </dependency>
-```    
     
