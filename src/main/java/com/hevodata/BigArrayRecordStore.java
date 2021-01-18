@@ -115,7 +115,7 @@ public class BigArrayRecordStore implements RecoverableRecordStore {
     }
 
     @Override
-    public void markInitialized() throws RecoveryException {
+    public void onInitialize() throws RecoveryException {
         try {
             Files.deleteIfExists(basePath.resolve(SHUTDOWN_MARKER));
         } catch (IOException e) {
@@ -126,7 +126,15 @@ public class BigArrayRecordStore implements RecoverableRecordStore {
 
     private void monitorDiskSpace() {
         long totalDirSize = FileUtils.sizeOfDirectory(new File(basePath.toString())) / (1024 * 1024 * 1024);
+        boolean wasRecoveryDisabled = recoveryDisabled;
         recoveryDisabled = totalDirSize > diskSpaceThreshold;
+        if (!wasRecoveryDisabled && recoveryDisabled) {
+            log.warn("Recovery disabled as base path {} has breached the disk threshold", basePath.toString());
+        }
+        if (wasRecoveryDisabled && !recoveryDisabled) {
+            log.info("Recovery enabled for base path {}", basePath.toString());
+        }
+
     }
 
     @Override

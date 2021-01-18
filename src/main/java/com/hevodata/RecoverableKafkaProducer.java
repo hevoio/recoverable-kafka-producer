@@ -32,7 +32,7 @@ public class RecoverableKafkaProducer implements Closeable {
     private String id;
 
     public RecoverableKafkaProducer(KafkaProducer<byte[], byte[]> embeddedProducer, ProducerRecoveryConfig producerRecoveryConfig) throws RecoveryException {
-        RecoverableRecordTracker recoverableRecordTracker = new InMemoryRecordTracker(producerRecoveryConfig.getBaseDir(),
+        RecoverableRecordTracker recoverableRecordTracker = new InMemoryKafkaCallbackRecordTracker(producerRecoveryConfig.getBaseDir(),
                 producerRecoveryConfig.getRecordTrackerConfig());
         RecoverableRecordStore recoverableRecordStore = new BigArrayRecordStore(producerRecoveryConfig.getBaseDir().resolve("record_store"), recoverableRecordTracker,
                 producerRecoveryConfig.getMaxParallelism(), producerRecoveryConfig.getDiskSpaceThreshold());
@@ -119,7 +119,7 @@ public class RecoverableKafkaProducer implements Closeable {
         if (lastConsumedMarker.get() != null) {
             this.recoverableRecordTracker.moveMarker(lastConsumedMarker.get());
         }
-        this.recoverableRecordStore.markInitialized();
+        this.recoverableRecordStore.onInitialize();
     }
 
 

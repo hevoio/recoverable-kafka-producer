@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @SuppressWarnings("WeakerAccess")
-public class InMemoryRecordTracker implements RecoverableRecordTracker {
+public class InMemoryKafkaCallbackRecordTracker implements RecoverableRecordTracker {
 
     private final Set<Long> pendingMarkers = Sets.newConcurrentHashSet();
     private final Path baseDataDir;
@@ -35,7 +35,7 @@ public class InMemoryRecordTracker implements RecoverableRecordTracker {
             Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("record-tracker-flush-%d").build());
 
 
-    public InMemoryRecordTracker(Path baseDataDir, RecordTrackerConfig recordTrackerConfig) {
+    public InMemoryKafkaCallbackRecordTracker(Path baseDataDir, RecordTrackerConfig recordTrackerConfig) {
         this.baseDataDir = baseDataDir.resolve("tracker");
         flushService.scheduleAtFixedRate(this::flushLatestMarker, recordTrackerConfig.getInitialFlushDelaySecs(),
                 recordTrackerConfig.getFlushFrequencySecs(), TimeUnit.SECONDS);

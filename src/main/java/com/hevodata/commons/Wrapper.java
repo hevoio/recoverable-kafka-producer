@@ -3,9 +3,6 @@ package com.hevodata.commons;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Created by Wiki on 28/01/20.
- */
 @Setter
 @NoArgsConstructor
 public class Wrapper<T> {
