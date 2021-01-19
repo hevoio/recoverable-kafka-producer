@@ -1,4 +1,4 @@
-package com.hevodata;
+package com.hevodata.recoverablekafkaproducer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hevodata.recoverablekafkaproducer.bigqueue.CallbackSerde;
