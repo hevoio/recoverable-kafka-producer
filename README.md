@@ -1,6 +1,6 @@
 # Recoverable Kafka Producer
 
-Recoverable Kafka Producer was built at [*Hevo*](https://hevodata.com) to achieve data integrity in Kafka at scale, to solve for cases where the records in Kafka buffer was getting dropped due to application crashes, Kafka broker crashes, etc
+Recoverable Kafka Producer was built at [Hevo](https://hevodata.com) to achieve data integrity in Kafka at scale, to solve for cases where the records in Kafka buffer was getting dropped due to application crashes, Kafka broker crashes, etc
 
 When you write to a Kafka broker using the producer library, the records are first written to a Kafka in-memory buffer and the Kafka [*sender*](https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/clients/producer/internals/Sender.java) thread is responsible for reading the records from the buffer and reliably syncing those to the broker. The client application can choose to wait for the records to be synced to the broker and only then perform the next steps in the workflow. This mode is very expensive and will not be accepted for applications that require sub-millisecond latencies. Those workflows might choose to just publish the record to the buffer and continue with the rest of the workflow. In such cases, the records in the buffer might get dropped due to various reasons(application crash, Kafka broker crash, etc). *Recoverable Producer* was build to solve this problem of achieving data integrity at scale, at Hevo.
 
@@ -11,7 +11,7 @@ When you write to a Kafka broker using the producer library, the records are fir
 <dependency>
     <groupId>com.hevodata</groupId>
     <artifactId>recoverable-kafka-producer</artifactId>
-    <version>1.0</version>
+    <version>1.0.0</version>
 </dependency>
 ```    
 
