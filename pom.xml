@@ -7,8 +7,34 @@
     <groupId>com.hevodata</groupId>
     <artifactId>recoverable-kafka-producer</artifactId>
     <version>1.0.0</version>
+    <packaging>jar</packaging>
 
-    <name>recoverable-kafka-producer</name>
+    <name>Recoverable Kafka Producer</name>
+    <url>https://github.com/hevoio/recoverable-kafka-producer</url>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>http://www.opensource.org/licenses/mit-license.php</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/hevoio/recoverable-kafka-producer/tree/master</url>
+        <connection>scm:git:git://github.com/hevoio/recoverable-kafka-producer.git</connection>
+        <developerConnection>scm:git:ssh://github.com:hevoio/recoverable-kafka-producer.git</developerConnection>
+    </scm>
+
+    <developers>
+        <developer>
+            <name>Hevo Data Inc</name>
+            <email>open-source@hevodata.com</email>
+            <organization>Hevo Data Inc.</organization>
+            <organizationUrl>https://hevodata.com</organizationUrl>
+        </developer>
+    </developers>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -23,6 +49,8 @@
         <lombok.version>1.18.16</lombok.version>
         <mvn-jar.version>3.2.0</mvn-jar.version>
         <mvn-src.version>3.2.1</mvn-src.version>
+        <mvn-jdoc.version>3.2.0</mvn-jdoc.version>
+        <mvn-gpg.version>1.6</mvn-gpg.version>
     </properties>
 
     <repositories>
@@ -39,43 +67,36 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <version>${kafka.version}</version>
         </dependency>
-
         <dependency>
             <groupId>com.leansoft</groupId>
             <artifactId>bigqueue</artifactId>
             <version>${bigqueue.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
             <version>${apache-commons-collections.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-io</artifactId>
             <version>${apache-commons-io.version}</version>
         </dependency>
-
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -83,22 +104,58 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
+
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>${mvn-jar.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>${mvn-src.version}</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${mvn-jar.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>${mvn-src.version}</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${mvn-jdoc.version}</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+<!--            disabling signing for initial version-->
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-gpg-plugin</artifactId>-->
+<!--                <version>${mvn-gpg.version}</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>sign-artifacts</id>-->
+<!--                        <phase>verify</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>sign</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
+        </plugins>
     </build>
+
     <distributionManagement>
         <repository>
             <id>bintray-hevo-recoverable-kafka-producer</id>
