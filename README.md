@@ -63,5 +63,5 @@ The recoverable producer ideally just adds a few microseconds in addition to the
 
 The recoverable producer uses *slf4j* as the logging facade. An slf4j compatible logging framework needs to be bound to enable logging on the producer side.
 
-Please write to dev@hevodata.com for any queries/feedback.
+Please write to `open-source@hevodata.com` for any queries/feedback.
     
