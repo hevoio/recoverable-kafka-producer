@@ -1,6 +1,6 @@
 package com.hevodata.recoverablekafkaproducer.bigqueue;
 
-import com.hevodata.recoverablekafkaproducer.bigqueue.exceptions.RecoveryException;
+import com.hevodata.recoverablekafkaproducer.exceptions.RecoveryException;
 
 public interface BigQueueSerDe<T> {
 

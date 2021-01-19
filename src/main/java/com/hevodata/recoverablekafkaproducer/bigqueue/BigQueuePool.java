@@ -2,9 +2,9 @@ package com.hevodata.recoverablekafkaproducer.bigqueue;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.hevodata.recoverablekafkaproducer.bigqueue.commons.Utils;
-import com.hevodata.recoverablekafkaproducer.bigqueue.exceptions.RecoveryException;
-import com.hevodata.recoverablekafkaproducer.bigqueue.exceptions.RecoveryRuntimeException;
+import com.hevodata.recoverablekafkaproducer.commons.Utils;
+import com.hevodata.recoverablekafkaproducer.exceptions.RecoveryException;
+import com.hevodata.recoverablekafkaproducer.exceptions.RecoveryRuntimeException;
 import com.leansoft.bigqueue.BigQueueImpl;
 import com.leansoft.bigqueue.IBigQueue;
 import lombok.extern.slf4j.Slf4j;

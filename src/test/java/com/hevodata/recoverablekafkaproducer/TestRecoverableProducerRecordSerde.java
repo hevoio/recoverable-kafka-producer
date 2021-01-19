@@ -1,11 +1,11 @@
 package com.hevodata.recoverablekafkaproducer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hevodata.recoverablekafkaproducer.bigqueue.CallbackSerde;
-import com.hevodata.recoverablekafkaproducer.bigqueue.RecoverableCallback;
-import com.hevodata.recoverablekafkaproducer.bigqueue.RecoverableProducerRecord;
-import com.hevodata.recoverablekafkaproducer.bigqueue.RecoverableProducerRecordSerde;
-import com.hevodata.recoverablekafkaproducer.bigqueue.exceptions.RecoveryRuntimeException;
+import com.hevodata.recoverablekafkaproducer.CallbackSerde;
+import com.hevodata.recoverablekafkaproducer.RecoverableCallback;
+import com.hevodata.recoverablekafkaproducer.RecoverableProducerRecord;
+import com.hevodata.recoverablekafkaproducer.RecoverableProducerRecordSerde;
+import com.hevodata.recoverablekafkaproducer.exceptions.RecoveryRuntimeException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
